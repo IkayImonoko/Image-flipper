@@ -5,6 +5,8 @@
 #include <vector>
 #include <stdexcept>
 
+#define DEBUG
+
 #pragma pack(push, 1)
 
 struct BmpFileHeader {
@@ -27,10 +29,10 @@ struct DibHeader {
 	int32_t yPixelPerMeter{0};
 	uint32_t colorsInColorTable{0};
 	uint32_t importantColorCount{0};
-	uint32_t redChannelBitmask{0x00ff0000};
-	uint32_t greenChannelBitmask{0x0000ff00};
-	uint32_t blueChannelBitmask{0x000000ff};
-	uint32_t alphaChannelBitmask{0xff000000};
+	uint32_t redChannelBitmask{0x00000000};
+	uint32_t greenChannelBitmask{0x00000000};
+	uint32_t blueChannelBitmask{0x00000000};
+	uint32_t alphaChannelBitmask{0x00000000};
 	uint32_t colorSpaceType{0x73524742};
 	uint32_t unused[16]{0};
 };
@@ -86,8 +88,9 @@ struct Bmp {
 				fileHeader.fileSize += data.size();
 			}
 			else {
-				uint8_t paddingSize = 4 - (rawRowSize % 4);
-				std::vector<uint8_t> paddingData{paddingSize};
+				uint32_t paddingSize = 4 - (rawRowSize % 4);
+				std::vector<uint8_t> paddingData;
+				paddingData.resize(paddingSize);
 				for (int j = 0; j < dibHeader.imageHeight; ++j) {
 					inputFile.read((char*)data.data() + rawRowSize * j, rawRowSize);
 					inputFile.read((char*)paddingData.data(), paddingSize);
@@ -100,13 +103,41 @@ struct Bmp {
 		else {
 			throw std::runtime_error("Error! Unable to open the input image file.");
 		}
+		inputFile.close();
 	}
 
 	//Bmp(int32_t width, int32_t height, bool alpha) {
 	//}
 
-	//void write(const char* fname) {
-	//}
+	void write(const char* fname) {
+		std::ofstream outputFile(fname, std::ios::binary);
+		if (outputFile) {
+			uint32_t rawRowSize = dibHeader.imageWidth * dibHeader.bitsPerPixel / 8;
+			outputFile.write((char*)&fileHeader, sizeof(BmpFileHeader));
+			outputFile.write((char*)&dibHeader, sizeof(DibHeader));
+			if (rawRowSize % 4 == 0) {
+				outputFile.write((char*)data.data(), data.size());
+			}
+			else {
+				uint32_t paddingSize = 4 - (rawRowSize % 4);
+				std::vector<uint8_t> paddingData{0};
+				paddingData.resize(paddingSize);
+
+#ifdef DEBUG
+				std::cout << "DEBUG! paddingSize: " << paddingSize << std::endl;
+				std::cout << "DEBUG! paddingData.size(): " << paddingData.size() << std::endl;
+#endif
+				for (int j = 0; j < dibHeader.imageHeight; ++j) {
+					outputFile.write((char*)data.data() + j * rawRowSize, rawRowSize);
+					outputFile.write((char*)paddingData.data(), paddingSize);
+				}
+			}
+		}
+		else {
+			throw std::runtime_error("Error! Unable to open the output image file.");
+		}
+		outputFile.close();
+	}
 
 	friend	std::ostream& operator<<(std::ostream& os, Bmp b) {
 
