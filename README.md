@@ -1,13 +1,13 @@
 # Image-flipper
 
-Install:
+    Install:
     $: git clone https://github.com/IkayImonoko/Image-flipper
     $: mkdir build
     $: cd build
     $: cmake ..
     $: make
 
-Usage:
+    Usage:
     $: flipp ../sample_640×426.bmp [flag]
     
     flag:
