@@ -8,7 +8,7 @@
     $: make
 
     Usage:
-    $: flipp ../sample_640×426.bmp [flag]
+    $: ./flipp ../sample_640×426.bmp [flag]
     
     flag:
         0 -> reflect about x-axis
